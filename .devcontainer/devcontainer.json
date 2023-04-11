@@ -1,0 +1,42 @@
+{
+	"name": "acr-handson",
+	"image": "mcr.microsoft.com/devcontainers/base:bullseye",
+	"features": {
+		"ghcr.io/devcontainers-contrib/features/kubectl-asdf:2": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers-contrib/features/kubectx-kubens:1": {
+			"version": "latest"
+		},
+		"ghcr.io/dhoeric/features/stern:1": {},
+		"ghcr.io/devcontainers-contrib/features/fzf:1": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+			"version": "none",
+			"helm": "latest",
+			"minikube": "none"
+		}
+	},
+	"postCreateCommand": "sed -i -e 's/(git)/(git kube-ps1)/g' $HOME/.zshrc && cat .devcontainer/zshrc >> ~/.zshrc",
+	"containerEnv": {
+		"SYNC_LOCALHOST_KUBECONFIG": "true"
+	},
+	"mounts": [
+		{
+			"source": "${env:HOME}${env:USERPROFILE}/.kube",
+			"target": "/home/vscode/.kube-localhost",
+			"type": "bind"
+		}
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-kubernetes-tools.vscode-kubernetes-tools"
+			],
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh"
+			}
+		}
+	}
+}
