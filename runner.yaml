@@ -1,0 +1,49 @@
+---
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: runner-sample
+spec:
+  template:
+    spec:
+      repository: $(REPOSITORY)
+      # image: ghcr.io/actions-runner-controller/actions-runner-controller/actions-runner:v2.303.0-ubuntu-20.04-3417c5a
+      image: ghcr.io/actions-runner-controller/actions-runner-controller/actions-runner-dind:v2.303.0-ubuntu-20.04-3417c5a
+      dockerdWithinRunnerContainer: true
+      labels:
+        - example
+      resources:
+        requests:
+          cpu: 100m
+        limits:
+          cpu: 600m
+      containers:
+        - name: runner
+          volumeMounts:
+            - name: persistent-storage
+              mountPath: /pv
+          securityContext:
+            privileged: true
+      nodeSelector:
+        kubernetes.io/hostname: lima-rancher-desktop
+      volumes:
+        - name: persistent-storage
+          persistentVolumeClaim:
+            claimName: pv-claim
+---
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: HorizontalRunnerAutoscaler
+metadata:
+  name: runner-sample-autoscaler
+spec:
+  scaleDownDelaySecondsAfterScaleOut: 300
+  scaleTargetRef:
+    name: runner-sample
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: PercentageRunnersBusy
+    scaleUpThreshold: "0.3"
+    scaleDownThreshold: "0.25"
+    scaleUpFactor: "2"
+    scaleDownFactor: "0.5"
