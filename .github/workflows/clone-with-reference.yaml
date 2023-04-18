@@ -1,0 +1,64 @@
+name: clone with reference
+
+on:
+  workflow_dispatch:
+    inputs:
+      org:
+        description: organization
+        required: true
+        default: rails
+      repo:
+        description: repository
+        required: true
+        default: rails
+
+env:
+  org: ${{ inputs.org || 'rails' }}
+  repo: ${{ inputs.repo || 'rails' }}
+jobs:
+  normal_clone:
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: clone
+        run: |
+          git clone https://github.com/${{ env.org }}/${{ env.repo }}.git
+          du -sh ./${{ env.repo }}
+          ls -al ./${{ env.repo }}
+  normal_clone_with_depth1:
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Dump GitHub context
+        run: echo '${{ toJSON(github) }}'
+      - name: clone
+        run: |
+          git clone --depth=1 https://github.com/${{ env.org }}/${{ env.repo }}.git
+          du -sh ./${{ env.repo }}
+          ls -al ./${{ env.repo }}
+  reference_clone_1st:
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: cleanup
+        run: rm -rf /pv/${{ env.repo }}.git
+      - name: clone
+        run: |
+          git clone --progress --mirror https://github.com/${{ env.org }}/${{ env.repo }}.git /pv/${{ env.repo }}.git
+          du -sh /pv/${{ env.repo }}.git
+          ls -al /pv/${{ env.repo }}.git
+  reference_clone_2nd:
+    runs-on: [self-hosted, linux]
+    needs: [reference_clone_1st]
+    steps:
+      - name: clone
+        run: | 
+          git clone --reference-if-able=/pv/${{ env.repo }}.git https://github.com/${{ env.org }}/${{ env.repo }}.git
+          du -sh ./${{ env.repo }}
+          ls -al ./${{ env.repo }}
+  reference_clone_3rd_with_depth1:
+    runs-on: [self-hosted, linux]
+    needs: [reference_clone_2nd]
+    steps:
+      - name: clone
+        run: |
+          git clone --reference-if-able=/pv/${{ env.repo }}.git --depth=1 https://github.com/${{ env.org }}/${{ env.repo }}.git
+          du -sh ./${{ env.repo }}
+          ls -al ./${{ env.repo }}

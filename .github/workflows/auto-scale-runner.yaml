@@ -1,0 +1,35 @@
+name: auto scale runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      memory:
+        description: '--vm-bytes'
+        required: true
+        type: string
+        default: '256'
+      parallel:
+        description: 'max parallel'
+        required: true
+        type: string
+        default: '4'
+
+env:
+  memory: ${{ inputs.memory || 256 }}
+jobs:
+  context:
+    strategy:
+      max-parallel: ${{ inputs.parallel || 4 }}
+      matrix:
+        environment: [1, 2, 3, 4, 5, 6, 7, 8]
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Dump runner context
+        run: echo '${{ toJSON(runner) }}'
+      - name: install stress
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y stress
+      - name: Stress
+        timeout-minutes: 2
+        run: stress -m 1 --vm-bytes ${{ env.memory }}M --vm-hang 60 --timeout 60s -v
